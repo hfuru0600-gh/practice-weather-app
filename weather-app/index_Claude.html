@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>お天気アプリ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      color: #e0e8ff;
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #8899bb;
+      font-size: 0.85rem;
+      margin-bottom: 40px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 32px 28px;
+      width: 280px;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card .location {
+      color: #aabbdd;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .card .city {
+      color: #e0eaff;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .weather-icon {
+      font-size: 4rem;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    .temperature {
+      color: #ffffff;
+      font-size: 3rem;
+      font-weight: 200;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .temperature span {
+      font-size: 1.4rem;
+      color: #aabbdd;
+    }
+
+    .condition {
+      color: #c0d0ee;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 16px;
+    }
+
+    .detail-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    .detail-label {
+      color: #7788aa;
+      font-size: 0.7rem;
+      margin-bottom: 2px;
+    }
+
+    .detail-value {
+      color: #d0e0ff;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .loading {
+      color: #8899bb;
+      font-size: 0.9rem;
+      padding: 40px 0;
+    }
+
+    .error-msg {
+      color: #ff8899;
+      font-size: 0.85rem;
+    }
+
+    .refresh-btn {
+      margin-top: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #d0e0ff;
+      font-size: 0.9rem;
+      padding: 12px 32px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s;
+      letter-spacing: 0.05em;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .updated-at {
+      color: #556677;
+      font-size: 0.75rem;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌤 お天気情報</h1>
+  <p class="subtitle">丹羽郡 / 可児市 / 射水市</p>
+
+  <div class="cards" id="cards">
+    <div class="loading">天気情報を取得中...</div>
+  </div>
+
+  <button class="refresh-btn" onclick="loadWeather()">🔄 更新する</button>
+  <p class="updated-at" id="updated-at"></p>
+
+  <script>
+    const locations = [
+      {
+        name: '丹羽郡',
+        pref: '愛知県',
+        lat: 35.3833,
+        lon: 136.8833,
+      },
+      {
+        name: '可児市',
+        pref: '岐阜県',
+        lat: 35.4333,
+        lon: 137.0667,
+      },
+      {
+        name: '射水市',
+        pref: '富山県',
+        lat: 36.7000,
+        lon: 137.0833,
+      },
+    ];
+
+    // WMO weather code → 日本語・絵文字
+    function getWeatherInfo(code) {
+      const map = {
+        0:  { label: '快晴',       icon: '☀️' },
+        1:  { label: 'ほぼ晴れ',   icon: '🌤' },
+        2:  { label: '一部曇り',   icon: '⛅' },
+        3:  { label: '曇り',       icon: '☁️' },
+        45: { label: '霧',         icon: '🌫' },
+        48: { label: '霧氷',       icon: '🌫' },
+        51: { label: '霧雨（弱）', icon: '🌦' },
+        53: { label: '霧雨',       icon: '🌦' },
+        55: { label: '霧雨（強）', icon: '🌧' },
+        61: { label: '雨（弱）',   icon: '🌧' },
+        63: { label: '雨',         icon: '🌧' },
+        65: { label: '雨（強）',   icon: '🌧' },
+        71: { label: '雪（弱）',   icon: '🌨' },
+        73: { label: '雪',         icon: '❄️' },
+        75: { label: '雪（強）',   icon: '❄️' },
+        77: { label: 'あられ',     icon: '🌨' },
+        80: { label: 'にわか雨',   icon: '🌦' },
+        81: { label: 'にわか雨',   icon: '🌧' },
+        82: { label: '激しい雨',   icon: '⛈' },
+        85: { label: 'にわか雪',   icon: '🌨' },
+        86: { label: 'にわか雪（強）', icon: '❄️' },
+        95: { label: '雷雨',       icon: '⛈' },
+        96: { label: '雷雨＋ひょう', icon: '⛈' },
+        99: { label: '激しい雷雨', icon: '🌩' },
+      };
+      return map[code] ?? { label: '不明', icon: '❓' };
+    }
+
+    async function fetchWeather(loc) {
+      const url = `https://api.open-meteo.com/v1/forecast`
+        + `?latitude=${loc.lat}&longitude=${loc.lon}`
+        + `&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relativehumidity_2m`
+        + `&timezone=Asia%2FTokyo`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('API error');
+      return res.json();
+    }
+
+    function buildCard(loc, data) {
+      const c = data.current;
+      const { label, icon } = getWeatherInfo(c.weathercode);
+      const temp = Math.round(c.temperature_2m);
+      const feels = Math.round(c.apparent_temperature);
+      const wind = Math.round(c.windspeed_10m);
+      const hum = c.relativehumidity_2m;
+
+      return `
+        <div class="card">
+          <div class="location">${loc.pref}</div>
+          <div class="city">${loc.name}</div>
+          <div class="weather-icon">${icon}</div>
+          <div class="temperature">${temp}<span>°C</span></div>
+          <div class="condition">${label}</div>
+          <div class="details">
+            <div class="detail-item">
+              <div class="detail-label">体感温度</div>
+              <div class="detail-value">${feels}°C</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">湿度</div>
+              <div class="detail-value">${hum}%</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">風速</div>
+              <div class="detail-value">${wind} km/h</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">天気コード</div>
+              <div class="detail-value">WMO ${c.weathercode}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadWeather() {
+      const container = document.getElementById('cards');
+      container.innerHTML = '<div class="loading">天気情報を取得中...</div>';
+
+      try {
+        const results = await Promise.all(locations.map(fetchWeather));
+        container.innerHTML = results
+          .map((data, i) => buildCard(locations[i], data))
+          .join('');
+
+        const now = new Date();
+        document.getElementById('updated-at').textContent =
+          `最終更新: ${now.toLocaleString('ja-JP')}`;
+      } catch (e) {
+        container.innerHTML = `<div class="error-msg">❌ 天気情報の取得に失敗しました。<br>ネットワーク接続を確認してください。</div>`;
+      }
+    }
+
+    loadWeather();
+  </script>
+</body>
+</html>
