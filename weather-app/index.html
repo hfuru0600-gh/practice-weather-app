@@ -337,6 +337,13 @@
       color: #2563eb;
     }
 
+    .forecast-holiday {
+      font-size: 0.72rem;
+      color: #dc2626;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
     .forecast-rain-value.emphasis {
       color: #b91c1c;
       font-weight: 700;
@@ -537,9 +544,11 @@
       return `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]})`;
     }
 
-    function buildForecastDays(daily) {
+    function buildForecastDays(daily, holidays = {}) {
       return daily.time.slice(1).map((dateText, index) => ({
+        dateText,
         dateLabel: formatDayLabel(dateText),
+        holiday: holidays[dateText] || null,
         weatherCode: daily.weather_code[index + 1],
         tempMax: formatNumber(daily.temperature_2m_max[index + 1]),
         tempMin: formatNumber(daily.temperature_2m_min[index + 1]),
@@ -610,10 +619,13 @@
       const info = weatherInfo(day.weatherCode);
       const toneClass = getForecastTone(day);
       const rainClass = day.precipitationProbability >= 60 ? "forecast-rain-value emphasis" : "forecast-rain-value";
+      const holidayHtml = day.holiday
+        ? `<span class="forecast-holiday">${day.holiday}</span>`
+        : "";
       return `
         <div class="forecast-detail ${toneClass}">
           <div class="forecast-head">
-            <div class="forecast-day">${day.dateLabel}</div>
+            <div class="forecast-day">${day.dateLabel}${holidayHtml}</div>
             <div class="forecast-main">
               <span class="forecast-icon" aria-hidden="true">${info.icon}</span>
               <span>${info.text}</span>
@@ -668,9 +680,9 @@
       return { location, current: data.current, daily: data.daily };
     }
 
-    function createCard({ location, current, daily }, locationIndex) {
+    function createCard({ location, current, daily }, locationIndex, holidays = {}) {
       const info = weatherInfo(current.weather_code);
-      const forecastDays = buildForecastDays(daily);
+      const forecastDays = buildForecastDays(daily, holidays);
       const highRainAlert = createHighRainAlert(location, forecastDays);
 
       return `
@@ -705,6 +717,29 @@
       `;
     }
 
+    const CALENDAR_API_KEY = "AIzaSyAIRjo3AaUNn4vj3E_GYmKSx1o0wGykfaU";
+    const HOLIDAY_CALENDAR_ID = "ja.japanese%23holiday%40group.v.calendar.google.com";
+
+    async function fetchHolidays() {
+      const today = new Date();
+      const timeMin = today.toISOString();
+      const timeMax = new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000).toISOString();
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${HOLIDAY_CALENDAR_ID}/events?key=${CALENDAR_API_KEY}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return {};
+        const data = await res.json();
+        const map = {};
+        (data.items || []).forEach((item) => {
+          const dateKey = item.start.date;
+          if (dateKey) map[dateKey] = item.summary;
+        });
+        return map;
+      } catch {
+        return {};
+      }
+    }
+
     async function loadWeather() {
       reloadButton.disabled = true;
       statusEl.className = "status";
@@ -712,8 +747,20 @@
       gridEl.innerHTML = "";
 
       try {
-        const results = await Promise.all(locations.map(fetchWeather));
-        gridEl.innerHTML = results.map((result, index) => createCard(result, index)).join("");
+        const [results, holidays] = await Promise.all([
+          Promise.all(locations.map(fetchWeather)),
+          fetchHolidays()
+        ]);
+        const cardsHtml = results.map((result, index) => {
+          result.daily.time.slice(1).forEach((dateText) => {
+            if (holidays[dateText]) {
+              result._holidays = result._holidays || {};
+              result._holidays[dateText] = holidays[dateText];
+            }
+          });
+          return createCard(result, index, holidays);
+        }).join("");
+        gridEl.innerHTML = cardsHtml;
         initializeForecastToggles();
         statusEl.textContent = "取得できました。";
         updatedAtEl.textContent = `更新時刻: ${new Date().toLocaleString("ja-JP")}`;
