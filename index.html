@@ -26,6 +26,7 @@
       font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
       background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 100%);
       color: var(--text);
+      line-height: 1.5;
     }
 
     .container {
@@ -67,8 +68,10 @@
       color: #fff;
       padding: 12px 18px;
       font-size: 0.95rem;
+      min-height: 48px;
       cursor: pointer;
       box-shadow: var(--shadow);
+      touch-action: manipulation;
     }
 
     button:hover {
@@ -83,6 +86,8 @@
     .updated-at {
       color: var(--muted);
       font-size: 0.9rem;
+      text-align: right;
+      overflow-wrap: anywhere;
     }
 
     .status {
@@ -90,6 +95,7 @@
       min-height: 24px;
       color: var(--muted);
       font-size: 0.95rem;
+      line-height: 1.5;
     }
 
     .status.error {
@@ -322,18 +328,130 @@
     }
 
     @media (max-width: 720px) {
+      .container {
+        width: min(100%, calc(100% - 20px));
+        padding: 20px 0 36px;
+      }
+
       .header {
         flex-direction: column;
+        gap: 12px;
+        margin-bottom: 18px;
       }
 
       .actions {
         align-items: flex-start;
+        width: 100%;
+      }
+
+      .actions button,
+      .forecast-toggle {
+        width: 100%;
+        font-size: 1rem;
+      }
+
+      .updated-at {
+        width: 100%;
+        text-align: left;
+        font-size: 0.85rem;
+      }
+
+      .status {
+        margin-bottom: 12px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .card-head {
+        margin-bottom: 12px;
+      }
+
+      .place {
+        font-size: 1.15rem;
+      }
+
+      .icon {
+        font-size: 1.9rem;
+      }
+
+      .temp {
+        font-size: 2.15rem;
+      }
+
+      .condition {
+        margin-bottom: 14px;
+        font-size: 0.95rem;
+      }
+
+      .alert-banner {
+        padding: 10px 12px;
+      }
+
+      .alert-list {
+        padding-left: 16px;
+        font-size: 0.88rem;
+      }
+
+      .meta,
+      .forecast-meta {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .forecast {
+        margin-top: 16px;
+        padding-top: 14px;
+      }
+
+      .forecast-title {
+        margin-bottom: 10px;
+      }
+
+      .forecast-controls,
+      .forecast-list {
+        gap: 10px;
+      }
+
+      .forecast-detail {
+        padding: 12px;
+        border-radius: 14px;
+      }
+
+      .forecast-meta-item {
+        padding: 9px 10px;
       }
 
       .forecast-head,
       .forecast-main {
         align-items: flex-start;
         flex-direction: column;
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      h1 {
+        font-size: 1.55rem;
+      }
+
+      .lead {
+        font-size: 0.92rem;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .temp {
+        font-size: 1.95rem;
       }
     }
   </style>
