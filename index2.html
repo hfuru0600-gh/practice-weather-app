@@ -462,7 +462,7 @@
   </main>
 
   <script>
-    const location = { name: "丹羽郡", region: "愛知県", latitude: 35.367, longitude: 136.869 };
+    const targetLocation = { name: "丹羽郡", region: "愛知県", latitude: 35.367, longitude: 136.869 };
 
     const weatherMap = {
       0: { text: "快晴", icon: "☀️" },
@@ -615,8 +615,8 @@
 
     async function fetchWeather() {
       const params = new URLSearchParams({
-        latitude: location.latitude,
-        longitude: location.longitude,
+        latitude: targetLocation.latitude,
+        longitude: targetLocation.longitude,
         current: "temperature_2m,weather_code,apparent_temperature,wind_speed_10m",
         daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
         forecast_days: "7",
@@ -632,11 +632,11 @@
         });
 
         if (!response.ok) {
-          throw new Error("丹羽郡の取得に失敗しました");
+        throw new Error("丹羽郡の取得に失敗しました");
         }
 
         const data = await response.json();
-        return { location, current: data.current, daily: data.daily };
+        return { location: targetLocation, current: data.current, daily: data.daily };
       } catch (error) {
         if (error.name === "AbortError") {
           throw new Error("天気情報の取得がタイムアウトしました");
@@ -656,8 +656,8 @@
         <article class="card">
           <div class="card-head">
             <div>
-              <h2 class="place">${location.name}</h2>
-              <p class="region">${location.region}</p>
+              <h2 class="place">${targetLocation.name}</h2>
+              <p class="region">${targetLocation.region}</p>
             </div>
             <div class="icon" aria-hidden="true">${info.icon}</div>
           </div>
