@@ -83,6 +83,21 @@
       cursor: wait;
     }
 
+    .clock {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 200;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      line-height: 1;
+      margin: 0 0 4px;
+    }
+
+    .clock-date {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
     .updated-at {
       color: var(--muted);
       font-size: 0.9rem;
@@ -460,10 +475,9 @@
   <main class="container">
     <section class="header">
       <div>
-        <h1>お天気</h1>
-        <p class="lead">
-          Open-Meteo の現在天気データと週間予報を使って、3地点の天候と気温を表示します。
-        </p>
+        <p class="clock" id="clock">--:--:--</p>
+        <p class="clock-date" id="clockDate"></p>
+        <p class="lead">丹羽郡 / 可児市 / 射水市</p>
       </div>
       <div class="actions">
         <button id="reloadButton" type="button">最新の天気を取得</button>
@@ -715,6 +729,19 @@
 
     reloadButton.addEventListener("click", loadWeather);
     loadWeather();
+
+    function updateClock() {
+      const now = new Date();
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      document.getElementById("clock").textContent = `${hh}:${mm}:${ss}`;
+      document.getElementById("clockDate").textContent =
+        `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}(${weekdays[now.getDay()]})`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
   </script>
 </body>
 </html>
